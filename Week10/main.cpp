@@ -18,6 +18,7 @@ Comment:
 #include "Hero.h"
 #include <vector>
 #include <fstream>
+#include <random>
 Hero	 gHero(2, 2);
 
 
@@ -120,7 +121,7 @@ void update(bool key[]);
 void saveMap();
 void loadMap();
 
-void generateMaze(char **board, int rowN, int colN);
+void generateMaze(char** board,int oriHeight,int oriWidth, int colN, int rowN);
 
 std::vector<Trigger*> gTriggers;
 
@@ -296,7 +297,7 @@ void setupBoard(int rowN, int colN)
 	}
 
 	/*Please implement your code here*/
-	generateMaze(gBoard, colN, rowN);
+	generateMaze(gBoard, colN, rowN, colN, rowN);
 	/************************************************************************/
 
 	// Setup for (random) position of all elements and implementation of game board using 2d dynamic array
@@ -554,46 +555,62 @@ void loadMap() {
 	iStream.close();
 }
 
-void generateMaze(char** board, int height, int width)
+void generateMaze(char** board,int oriHeight,int oriWidth,int colN,int rowN)
 {
-	int direction;
-	if (height > width)
+	if (colN < 3 || rowN < 3) return;
+	int direction = rand() % 2;
+	if (direction == 0)
 	{
-		direction = 0;
-	}
-	else if (height < width)
-	{
-		direction = 1;
-	}
-	else direction = rand() % 2;
-	if (height < 3 || width < 3)
-	{
-		return;
-	}
-	if (direction == 0) //horizontal
-	{
-		int setWall = rand() % (height - 2) + 1;
-		int setPath = rand() % (width - 2) + 1;
-		for (int i = 0; i < width; i++)
+		int wall = rand() % (colN - 2) + 1;
+		int anotherWall = rand() % (oriHeight - wall) + wall;
+		for (int i = 1; i < oriWidth; i++)
 		{
-			if (i != setPath)
+			int hasPath = rand() % 2;
+			if (hasPath)
 			{
-				board[setWall][i] = GWALL;
+				board[wall][i] = GWALL;
+			}
+			int hasPath2 = rand() % 2;
+			if (hasPath2)
+			{
+				board[anotherWall][i] = GWALL;
 			}
 		}
-		generateMaze(board, setWall, width);
+		int randint = rand() % 2;
+		if (randint)
+		{
+			generateMaze(board, oriHeight, oriWidth, wall, rowN);
+		}
+		else
+		{
+			generateMaze(board, oriHeight, oriWidth, anotherWall, rowN);
+		}
 	}
 	else
 	{
-		int setWall = rand() % (width - 2) + 1;
-		int setPath = rand() % (height - 2) + 1;
-		for (int i = 0; i < height; i++)
+		int wall = rand() % (rowN - 2) + 1;
+		int anotherWall = rand() % (oriWidth - wall) + wall;
+		for (int i = 1; i < oriHeight; i++)
 		{
-			if (i != setPath)
+			int hasPath = rand() % 2;
+			if (hasPath)
 			{
-				board[i][setWall] = GWALL;
+				board[i][wall] = GWALL;
+			}
+			int hasPath2 = rand() % 2;
+			if (hasPath)
+			{
+				board[i][anotherWall] = GWALL;
 			}
 		}
-		generateMaze(board, height, setWall);
+		int randint = rand() % 2;
+		if (randint)
+		{
+			generateMaze(board, oriHeight, oriWidth, colN, wall);
+		}
+		else
+		{
+			generateMaze(board, oriHeight, oriWidth, colN, anotherWall);
+		}
 	}
 }
