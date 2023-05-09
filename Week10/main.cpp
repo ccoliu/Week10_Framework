@@ -2,16 +2,12 @@
 File:   source.cpp
 
 Author:
-		鍾賢廣，ea5878158@gmail.com
+		劉家成，frgnd5433@gmail.com
 Modifier:
-		賴祐吉，cheeryuchi@gmail.com
-		黃欣云，windyhuang6@gmail.com
-		陳俊宇，JYCReports@gmail.com
-		邱嘉興，tbcey74123@gmail.com
+		陳尚澤，luchiya131072@gmail.com
 Comment:
-		基本輸入方向移動功能，w s a d 移動腳色上下左右，空白改變腳色站立之地板字元，到T上可以增加經驗
-		ESC是離開畫面。同時更新圖版上的資訊。
-
+		Enter the width and height of the dungeon, and the program will
+		generate the dungeon and generate the inner wall of the dungeon randomly.
 ************************************************************************/
 
 #include "main.h"
@@ -121,6 +117,7 @@ void update(bool key[]);
 void saveMap();
 void loadMap();
 
+bool walkMaze(char** board, int colN, int rowN, int y, int x);
 void generateMaze(char** board,int oriHeight,int oriWidth, int colN, int rowN);
 
 std::vector<Trigger*> gTriggers;
@@ -297,7 +294,24 @@ void setupBoard(int rowN, int colN)
 	}
 
 	/*Please implement your code here*/
-	generateMaze(gBoard, colN, rowN, colN, rowN);
+	do
+	{
+		for (int i = 1; i < rowN - 1; i++) 
+		{
+			for (int j = 1; j < colN - 1; j++)
+			{
+				gBoard[i][j] = GNOTHING; // set all to nothing
+			}
+		}
+		generateMaze(gBoard, rowN, colN, rowN, colN); // generate maze
+	} while (walkMaze(gBoard, 1, 1, rowN, colN) == false); // check if maze is solvable
+	for (int i = 1; i < rowN - 1; i++)
+	{
+		for (int j = 1; j < colN - 1; j++)
+		{
+			if (gBoard[i][j] == 'P') gBoard[i][j] = GNOTHING; // set all P to nothing
+		}
+	}
 	/************************************************************************/
 
 	// Setup for (random) position of all elements and implementation of game board using 2d dynamic array
@@ -555,62 +569,88 @@ void loadMap() {
 	iStream.close();
 }
 
-void generateMaze(char** board,int oriHeight,int oriWidth,int colN,int rowN)
+bool walkMaze(char** board, int y, int x, int colN, int rowN) //function to walk through the maze
 {
-	if (colN < 3 || rowN < 3) return;
-	int direction = rand() % 2;
-	if (direction == 0)
+	if (y == colN - 2 && x == rowN - 2) //if reach the exit, return true
 	{
-		int wall = rand() % (colN - 2) + 1;
-		int anotherWall = rand() % (oriHeight - wall) + wall;
-		for (int i = 1; i < oriWidth; i++)
+		return true;
+	}
+	board[y][x] = 'P'; //set the position to path
+	if (x + 1 < rowN - 1 && board[y][x + 1] == GNOTHING) //if the right position is empty, walk right
+	{
+		if (walkMaze(board, y, x + 1, colN, rowN)) return true;
+	}
+	if (y + 1 < colN - 1 && board[y + 1][x] == GNOTHING) //if the down position is empty, walk down
+	{
+		if (walkMaze(board, y + 1, x, colN, rowN)) return true;
+	}
+	if (x - 1 > 0 && board[y][x - 1] == GNOTHING) //if the left position is empty, walk left
+	{
+		if (walkMaze(board, y, x - 1, colN, rowN)) return true;
+	}
+	if (y - 1 > 0 && board[y - 1][x] == GNOTHING) //if the up position is empty, walk up
+	{
+		if (walkMaze(board, y - 1, x, colN, rowN)) return true;
+	}
+	return false; // if no way to go, return false
+}
+
+void generateMaze(char** board,int oriHeight,int oriWidth,int colN,int rowN) //function to generate maze
+{
+	if (colN < 3 || rowN < 3) return; //if the size of the maze is too small, return
+	int direction = rand() % 2; //randomly choose a direction to generate wall
+	if (direction == 0) //horizontal wall
+	{
+		int wall = rand() % (colN - 2) + 1; //randomly choose a row to generate wall
+		int anotherWall = rand() % (oriHeight - wall) + wall - 1; //randomly choose another row to generate wall
+		for (int i = 1; i < oriWidth; i++) //generate wall
 		{
-			int hasPath = rand() % 2;
-			if (hasPath)
+			int hasPath = rand() % 2; //randomly choose whether to generate path
+			if (hasPath) //if generate path, set the position to path
 			{
 				board[wall][i] = GWALL;
 			}
-			int hasPath2 = rand() % 2;
-			if (hasPath2)
+			int hasPath2 = rand() % 2; //randomly choose whether to generate path
+			if (hasPath2) //if generate path, set the position to path
 			{
 				board[anotherWall][i] = GWALL;
 			}
 		}
-		int randint = rand() % 2;
+		int randint = rand() % 2; //randomly choose whether to generate path
 		if (randint)
 		{
-			generateMaze(board, oriHeight, oriWidth, wall, rowN);
+			generateMaze(board, oriHeight, oriWidth, wall, rowN); //recursively generate maze
 		}
 		else
 		{
-			generateMaze(board, oriHeight, oriWidth, anotherWall, rowN);
+			generateMaze(board, oriHeight, oriWidth, anotherWall, rowN); //recursively generate maze
 		}
 	}
-	else
+	else //vertical wall
 	{
-		int wall = rand() % (rowN - 2) + 1;
-		int anotherWall = rand() % (oriWidth - wall) + wall;
-		for (int i = 1; i < oriHeight; i++)
+		int wall = rand() % (rowN - 2) + 1; //randomly choose a column to generate wall
+		int anotherWall = rand() % (oriWidth - wall) + wall - 1; //randomly choose another column to generate wall
+		for (int i = 1; i < oriHeight; i++) //generate wall
 		{
-			int hasPath = rand() % 2;
-			if (hasPath)
+			int hasPath = rand() % 2; //randomly choose whether to generate path
+			if (hasPath) //if generate path, set the position to path
 			{
 				board[i][wall] = GWALL;
 			}
-			int hasPath2 = rand() % 2;
-			if (hasPath)
+			int hasPath2 = rand() % 2; //randomly choose whether to generate path
+			if (hasPath) //if generate path, set the position to path
 			{
 				board[i][anotherWall] = GWALL;
 			}
 		}
-		int randint = rand() % 2;
+		int randint = rand() % 2; //randomly choose whether to generate path
 		if (randint)
 		{
-			generateMaze(board, oriHeight, oriWidth, colN, wall);
+			generateMaze(board, oriHeight, oriWidth, colN, wall); //recursively generate maze
 		}
 		else
 		{
-			generateMaze(board, oriHeight, oriWidth, colN, anotherWall);
+			generateMaze(board, oriHeight, oriWidth, colN, anotherWall); //recursively generate maze
 		}
 	}
 }
